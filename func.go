@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/oracle/oci-go-sdk/common"
+	"github.com/oracle/oci-go-sdk/common/auth"
 	"github.com/oracle/oci-go-sdk/objectstorage"
 	"github.com/Sugi275/oci-objectstorage-multiregioner/loglib"
 	fdk "github.com/fnproject/fdk-go"
@@ -152,6 +153,8 @@ func generateAction(ctx context.Context, input EventsInput) (Action, error) {
 func runAction(action Action) error {
 	var err error
 
+	fmt.Println(action)
+
 	switch action.ActionType {
 	case actionTypeCreate, actionTypeUpdate:
 		err = runCreate(action)
@@ -169,11 +172,19 @@ func runAction(action Action) error {
 }
 
 func runCreate(action Action) error {
-	configProvider := common.DefaultConfigProvider()
-	client, err := objectstorage.NewObjectStorageClientWithConfigurationProvider(configProvider)
+	provider, err := auth.ResourcePrincipalConfigurationProvider()
+
+	if err != nil {
+		loglib.Sugar.Error(err)
+		return err
+	}
+
+	// provider := common.DefaultConfigProvider()
+	client, err := objectstorage.NewObjectStorageClientWithConfigurationProvider(provider)
 	client.SetRegion(string(action.SourceRegion)) 
 
 	if err != nil {
+		loglib.Sugar.Error(err)
 		return err
 	}
 
@@ -192,11 +203,13 @@ func runCreate(action Action) error {
 			CopyObjectDetails: copyObjectDetail,
 		}
 	
+		fmt.Println(client)
 		fmt.Println(request)
 
 		_, err = client.CopyObject(action.ctx, request)
 	
 		if err != nil {
+			loglib.Sugar.Error(err)
 			return err
 		}	
 	}
@@ -205,11 +218,20 @@ func runCreate(action Action) error {
 }
 
 func runDelete(action Action) error {
-	configProvider := common.DefaultConfigProvider()
-	client, err := objectstorage.NewObjectStorageClientWithConfigurationProvider(configProvider)
+	provider, err := auth.ResourcePrincipalConfigurationProvider()
+
+	if err != nil {
+		loglib.Sugar.Error(err)
+		return err
+	}
+	
+	// provider := common.DefaultConfigProvider()
+
+	client, err := objectstorage.NewObjectStorageClientWithConfigurationProvider(provider)
 	client.SetRegion(string(action.SourceRegion))
 
 	if err != nil {
+		loglib.Sugar.Error(err)
 		return err
 	}
 
@@ -225,6 +247,7 @@ func runDelete(action Action) error {
 		_, err := client.DeleteObject(action.ctx, request)
 
 		if err != nil {
+			loglib.Sugar.Error(err)
 			return err
 		}
 	}

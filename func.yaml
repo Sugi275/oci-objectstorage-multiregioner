@@ -1,5 +1,5 @@
 schema_version: 20180708
 name: objectstorage_multiregioner
-version: 0.0.3
+version: 0.0.31
 runtime: go
 entrypoint: ./func
